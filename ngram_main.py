@@ -434,7 +434,7 @@ for i in range(num_turns):
             date2 = line[4:-1]
         if "min" in line:
             date1 = line[4:-1]
-    questions.append({build_question("ngram", [date1,date2,trend_word]): [data,date1,date2]})
+    questions.append({build_question([date1,date2,trend_word]): [data,date1,date2]})
 
 gamestart = True
 points = []
