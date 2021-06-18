@@ -27,6 +27,7 @@ LIGHTGRAY = (220,220,220)
 # user defined events
 BLINK_EVENT = pg.USEREVENT + 0
 
+# store given player data
 class Player:
     def __init__(self, name):
         self.name = name
@@ -35,7 +36,7 @@ class Player:
         self.points_count = 0
         self.done = False
 
-
+# sumbsumes all clickable elements
 class Button:
     def __init__(self,box_type,color,x,y,w,h):
         self.type = box_type
@@ -46,6 +47,7 @@ class Button:
         self.enter = False
         self.push_count = 0
 
+    # cover responses to clicking, interacting based on element type
     def handle(self,event, outside=False):
         if pg.mouse.get_pressed()[0]:
             self.clicked = True
@@ -80,6 +82,7 @@ class Button:
                 if event.type == pg.MOUSEMOTION and gamestart:
                     points.append(event.pos)
 
+        # cram in a clearing option for the plot box
         if not self.clicked:
             if self.type == "text":
                 self.color = BLACK
@@ -110,12 +113,14 @@ def text_blit(location, text, surf, box):
     pg.display.update(pg.Rect(box.rect.x+x, box.rect.y-y, text_w, text_h))
 
 
+# function to collect code for displaying intro screen
 def show_intro(intro, intro_length):
     intro_timer = 0
     screen.fill(WHITE)
     screen.blit(intro, [0,0])
     pg.display.update()
     while intro_timer < intro_length:
+        # adds clock time until "intro_length" reached
         dt = clock.tick()
         intro_timer = intro_timer + dt
         for event in pg.event.get():
@@ -123,14 +128,16 @@ def show_intro(intro, intro_length):
                 pg.quit()
                 sys.exit()
 
-
+# function to collect code for displaying "HOW TO PLAY" screen
 def show_howto(howto):
     screen.fill(WHITE)
     screen.blit(howto, [0,0])
+    # need double surfs to breakup text
     readyB1 = reallybigfont.render("CLICK HERE", True, BLUE)
     readyB2 = reallybigfont.render("WHEN READY", True, BLUE)
     readyO1 = reallybigfont.render("CLICK HERE", True, YELLOW)
     readyO2 = reallybigfont.render("WHEN READY", True, YELLOW)
+    # cycle through and pick other color for blinking effect
     blink_surfs = cycle([[readyO1,readyO2], [readyB1,readyB2]])
     blink_curr = next(blink_surfs)
     pg.time.set_timer(BLINK_EVENT, 800)
@@ -154,7 +161,7 @@ def show_howto(howto):
         pg.display.update()
         clock.tick(60)
 
-# redraw game text
+# redraw on-screen game text
 def draw_dates():
     # draw min, max data vals, min max dates, and middle date
     # any text added to game later can be drawn here too
@@ -206,8 +213,7 @@ def draw_ans(data, guess, name):
     namesurf = bigfont.render("BEST: "+best_name, True, BLUE)
     text_w , text_h = font.size("best: "+best_name)
     screen.blit(namesurf, (plot_box.rect.x+10, plot_box.rect.y+350))
-    # update plot box
-    # whole is ok here?
+    # update plot box, but whole screen is fine
     pg.display.update()
     pg.time.wait(5000)
 
@@ -268,7 +274,7 @@ def score(draw_points, min_val, max_val, data):
     pointsx = []
     for i in range(len(points)):
         fixed_y = abs((plot_box.rect.y+plot_box.rect.h)-points[i][1])  # first adjust for opposite pygame y coords
-        pointsy.append(fixed_y*(max(data))/(max_y_point))  # then scale to data
+        pointsy.append(fixed_y*(max(data))/(max_y_point))              # then scale to data
         pointsx.append(i*(len(data))/max_x_point)
 
     datax = list(range(len(data)))
@@ -285,9 +291,10 @@ def score(draw_points, min_val, max_val, data):
     
     # calc total squared deviation, point by point (they now match this way!)
     squared_dist = 0
-    furthest = (min(datanew) - max(datanew))**2
+    furthest = (min(datanew) - max(datanew))**2    # this scales by worst possible single point addition
     for i in range(len(datanew)):
         player_val = playernew[i]
+        # bleow is preventing interpolation from surpassing min / max (plot box boundaries)
         if playernew[i] < min_val:
             player_val = min_val
         if playernew[i] > max_val:
@@ -328,16 +335,11 @@ def interpolate_new(points, old_count):
 
 
 # build the str that is the question to ask
-def build_question(kind, kind_return):
-    if kind == "ngram":
-        min_year = kind_return[0]
-        max_year = kind_return[1]
-        word = kind_return[2]
-        question = "Plot the frequency of the term "+str(word)+" in US books"
-    if kind == "trend":
-        date_range = kind_return[0]+ " "+kind_return[1]
-        word = kind_return[2]
-        question = "Plot the popularity of the term "+str(word)+" in Google searches"
+def build_question(kind_return):
+    min_year = kind_return[0]
+    max_year = kind_return[1]
+    word = kind_return[2]
+    question = "Plot the frequency of the term "+str(word)+" in US books"
     return question
 
 
@@ -522,8 +524,10 @@ while not quit:
 
     points = curr_player.points
     
+    # if a player has clicked "LOCK - IN"
     if done_box.push_count > 0 and len(curr_player.points) > 0:
         curr_player.done = True
+        # grab their score, add to round list
         this_score = score(curr_player.points, min_val, max_val, data)
         curr_player.score = curr_player.score + this_score
         round_scores.append([curr_player.name, this_score])
@@ -561,14 +565,16 @@ while not quit:
                 else:
                     pg.draw.line(screen, BLACK, curr_point, next_point, 2)
 
+    # if done, before exiting, show final score screen
     if which_ques == num_turns:
         screen.fill(WHITE)
         x = 230
         y = -20
+        # blit the title
         screen.blit(finalsurf, [plot_box.rect.x+x, plot_box.rect.y+y])
-        #text_blit([x,-y],"FINAL SCORE (AVG)", finalsurf, plot_box)
         pg.draw.line(screen, GREEN,[x,y+170],[x+460,y+170],3)
         buffer = 0
+        # then each score
         for player in players:
             scoresurf = font.render(player.name+": "+str(player.score/num_turns), True, BLUE)
             screen.blit(scoresurf,[plot_box.rect.x+130,plot_box.rect.y+y+(30*buffer)+60])
