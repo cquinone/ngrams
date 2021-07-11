@@ -414,7 +414,6 @@ curr_player = players[0]   # set first player!
 
 # fonts
 font_name = 'couriernew'
-#font_name = 'athelas'
 reallybigfont = pg.font.SysFont(font_name, 32, bold=True)
 bigfont = pg.font.SysFont(font_name, 26, bold=True)
 font = pg.font.SysFont(font_name, 20, bold=True)
@@ -519,7 +518,8 @@ while not quit:
                 # upate score blit
                 draw_scores()
             next_box.push_count = 0
-            ans_drawn_count = ans_drawn_count + 1
+            ans_drawn_count = 0
+            #done_count = len(players)
 
     # if the first turn, set up
     if overall_count == 0:
@@ -542,7 +542,8 @@ while not quit:
     points = curr_player.points
     
     # if a player has clicked "LOCK - IN"
-    if done_box.push_count > 0 and len(curr_player.points) > 0 and done_count != len(players):
+    # skip if on actual data draw, or if no points have been drawn, or etc
+    if done_box.push_count > 0 and len(curr_player.points) > 0 and next_box.push_count < 1 and ans_drawn_count < 1:
         curr_player.done = True
         # grab their score, add to round list
         this_score = score(curr_player.points, min_val, max_val, data)
