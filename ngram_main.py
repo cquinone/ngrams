@@ -187,6 +187,10 @@ def draw_dates():
 
 # draw the actual data at end of round, along with best guess
 def draw_ans(data, guess, name):
+    # button to advance to next round
+    pg.draw.rect(screen, next_box.color, next_box.rect)
+    screen.blit(nextsurf, (next_box.rect.x+5,next_box.rect.y+10))
+    
     xs = np.linspace( plot_box.rect.x, plot_box.rect.x+plot_box.rect.w, num = len(data)) 
     data_points = []
     for i in range(len(data)):
@@ -210,12 +214,16 @@ def draw_ans(data, guess, name):
             next_point = data_points[i+1]
             pg.draw.line(screen, ORANGE, curr_point, next_point, 3)
 
+    # to animate connection need to pick points along x, and draw betweeen
+    # two ways: find similar points, and pick between? or, force xs to be standard
+    # close xs is like... 
+
     namesurf = bigfont.render("BEST: "+best_name, True, BLUE)
     text_w , text_h = font.size("best: "+best_name)
-    screen.blit(namesurf, (plot_box.rect.x+10, plot_box.rect.y+350))
+    screen.blit(namesurf, (plot_box.rect.x+700, plot_box.rect.y+200))
+
     # update plot box, but whole screen is fine
     pg.display.update()
-    pg.time.wait(5000)
 
 
 # redraw score section
@@ -377,11 +385,12 @@ clock = pg.time.Clock()
 plot_box = Button("draw", BLACK, 100, 135, 600, 280)
 plot_box.enter = True
 
-# coordinates of input box to enter names and guesses into
+# coordinates of input box to enter names and guesses into, box to advance round
 
 done_box = Button("button", BLUE, 750, 380, 200, 50)
+next_box = Button("button", BLACK, 700, 450, 250, 50)
 
-boxes = [done_box,plot_box]
+boxes = [next_box,done_box,plot_box]
 
 # variable initialization
 
@@ -392,11 +401,16 @@ num_turns = 5
 quit = False
 overall_count = 0   # will track game progression
 which_ques = 0
+gamestart = True
+points = []
+plot_box.clicked = False
+ans_drawn_count = 0
 
 # get vals from args
 num_players = len(sys.argv)
 for i in range(1,num_players):
     players.append(Player(sys.argv[i]))
+curr_player = players[0]   # set first player!
 
 # fonts
 font_name = 'couriernew'
@@ -436,11 +450,6 @@ for i in range(num_turns):
             date1 = line[4:-1]
     questions.append({build_question([date1,date2,trend_word]): [data,date1,date2]})
 
-gamestart = True
-points = []
-plot_box.clicked = False
-curr_player = players[0]
-
 # set up data for this question, which is the first
 ques, data, date1, date2, middate, min_val, max_val = get_this_question()
 
@@ -449,6 +458,7 @@ date1surf, date2surf, middatesurf, minsurf, maxsurf, quessurf, namesurf,ques_len
 score_banner = bigfont.render("SCORES",True,BLUE)
 clearsurf = smallfont.render("Hover over plotting and press c to clear all points",True,BLACK)
 locksurf = bigfont.render("LOCK - IN",True,YELLOW)
+nextsurf = bigfont.render(" NEXT QUESTION",True,YELLOW)
 finalsurf = bigfont.render("FINAL SCORES (AVG)", True, GREEN)
 
 # load images
@@ -456,7 +466,7 @@ intro = pg.image.load("ngram_intro.png").convert_alpha()
 howto = pg.image.load("ngram_howto.png").convert_alpha()
 
 # intro display
-intro_length = 7000
+intro_length = 70
 show_intro(intro, intro_length)
 # instructions display
 show_howto(howto)
@@ -482,27 +492,34 @@ while not quit:
     
     # check if round over
     if done_count == len(players):
-        best_name = min(round_scores, key=lambda x: (x[1]))[0]
-        for player in players:
-            if player.name == best_name:
-                best_player = player
-        round_scores = []
-        which_ques = which_ques + 1
-        # draw right ans alongside best guess
-        draw_ans(data, best_player.points, best_name)
-        # if the game isnt over, get the next question data
-        if which_ques < num_turns:
-            curr_player = players[0]
-            ques, data, date1, date2, middate, min_val, max_val = get_this_question()
-            date1surf, date2surf, middatesurf, minsurf, maxsurf, quessurf, namesurf,ques_length = get_surfs()
-            for p in players:
-                p.done = False
-                p.points = []
-
-            screen.fill(WHITE)
-            draw_dates()
-            # upate score blit
-            draw_scores()
+        # draw right ans alongside best guess, calculate first
+        if ans_drawn_count < 1:
+            next_box.push_count = 0
+            best_name = min(round_scores, key=lambda x: (x[1]))[0]
+            for player in players:
+                if player.name == best_name:
+                    best_player = player
+            round_scores = []
+            draw_ans(data, best_player.points, best_name)
+            ans_drawn_count = ans_drawn_count + 1
+        
+        if next_box.push_count > 0:
+            which_ques = which_ques + 1
+            # if the game isnt over, get the next question data
+            if which_ques < num_turns:
+                curr_player = players[0]
+                ques, data, date1, date2, middate, min_val, max_val = get_this_question()
+                date1surf, date2surf, middatesurf, minsurf, maxsurf, quessurf, namesurf,ques_length = get_surfs()
+                for p in players:
+                    p.done = False
+                    p.points = []
+    
+                screen.fill(WHITE)
+                draw_dates()
+                # upate score blit
+                draw_scores()
+            next_box.push_count = 0
+            ans_drawn_count = ans_drawn_count + 1
 
     # if the first turn, set up
     if overall_count == 0:
@@ -525,7 +542,7 @@ while not quit:
     points = curr_player.points
     
     # if a player has clicked "LOCK - IN"
-    if done_box.push_count > 0 and len(curr_player.points) > 0:
+    if done_box.push_count > 0 and len(curr_player.points) > 0 and done_count != len(players):
         curr_player.done = True
         # grab their score, add to round list
         this_score = score(curr_player.points, min_val, max_val, data)
@@ -539,31 +556,32 @@ while not quit:
         done_box.push_count = 0
 
     # general drawing calls
-    pg.draw.rect(screen, done_box.color, done_box.rect)
-    pg.draw.rect(screen, plot_box.color, plot_box.rect, 3)
-    screen.blit(locksurf, (done_box.rect.x+25,done_box.rect.y+10))
-    # draw guiding grid on plot box
-    xs = np.linspace(plot_box.rect.x+5, plot_box.rect.x+plot_box.rect.w-5, num=8)
-    ys = np.linspace(plot_box.rect.y+5, plot_box.rect.y+plot_box.rect.h-5, num=6)
-    for i in range(len(xs)):
-        if i == 0 or i == len(xs) - 1:
-            continue
-        x = xs[i]
-        pg.draw.line(screen, LIGHTGRAY, [x,plot_box.rect.y+5],[x,plot_box.rect.y+plot_box.rect.h-5],2)
-        if i < len(ys) and i != len(ys) - 1:    # y linees are slightly less dense
-            y = ys[i]
-            pg.draw.line(screen, LIGHTGRAY, [plot_box.rect.x+5,y],[plot_box.rect.x+plot_box.rect.w-5,y],2)
-    # now draw current points
-    if not curr_player.done:
-        for i in range(len(curr_player.points)):
-            curr_point = curr_player.points[i]
-            # try drawing lines, save for where its too wide
-            if i != len(curr_player.points) - 1:
-                next_point = curr_player.points[i+1]
-                if abs(next_point[0]- curr_point[0]) >= 40 or abs(next_point[1]- curr_point[1]) >= 40:  # MIGHT NEED ADJUSTING!!
-                    continue
-                else:
-                    pg.draw.line(screen, BLACK, curr_point, next_point, 2)
+    if done_count != len(players):  # not waiting for next round!
+        pg.draw.rect(screen, done_box.color, done_box.rect)
+        pg.draw.rect(screen, plot_box.color, plot_box.rect, 3)
+        screen.blit(locksurf, (done_box.rect.x+25,done_box.rect.y+10))
+        # draw guiding grid on plot box
+        xs = np.linspace(plot_box.rect.x+5, plot_box.rect.x+plot_box.rect.w-5, num=8)
+        ys = np.linspace(plot_box.rect.y+5, plot_box.rect.y+plot_box.rect.h-5, num=6)
+        for i in range(len(xs)):
+            if i == 0 or i == len(xs) - 1:
+                continue
+            x = xs[i]
+            pg.draw.line(screen, LIGHTGRAY, [x,plot_box.rect.y+5],[x,plot_box.rect.y+plot_box.rect.h-5],2)
+            if i < len(ys) and i != len(ys) - 1:    # y linees are slightly less dense
+                y = ys[i]
+                pg.draw.line(screen, LIGHTGRAY, [plot_box.rect.x+5,y],[plot_box.rect.x+plot_box.rect.w-5,y],2)
+        # now draw current points
+        if not curr_player.done:
+            for i in range(len(curr_player.points)):
+                curr_point = curr_player.points[i]
+                # try drawing lines, save for where its too wide
+                if i != len(curr_player.points) - 1:
+                    next_point = curr_player.points[i+1]
+                    if abs(next_point[0]- curr_point[0]) >= 40 or abs(next_point[1]- curr_point[1]) >= 40:  # MIGHT NEED ADJUSTING!!
+                        continue
+                    else:
+                        pg.draw.line(screen, BLACK, curr_point, next_point, 2)
 
     # if done, before exiting, show final score screen
     if which_ques == num_turns:
@@ -574,9 +592,19 @@ while not quit:
         screen.blit(finalsurf, [plot_box.rect.x+x, plot_box.rect.y+y])
         pg.draw.line(screen, GREEN,[x,y+170],[x+460,y+170],3)
         buffer = 0
-        # then each score
+        
+        lowest = 10000000   # just some impossibly high score
         for player in players:
-            scoresurf = font.render(player.name+": "+str(player.score/num_turns), True, BLUE)
+            if player.score < lowest:
+                lowest = player.score
+                best_name = player.name
+        
+        # then each score, highlighting lowest!
+        for player in players:
+            if player.name != best_name:
+                scoresurf = font.render(player.name+": "+str(player.score/num_turns), True, BLUE)
+            else:
+                scoresurf = font.render(player.name+": "+str(player.score/num_turns), True, ORANGE)
             screen.blit(scoresurf,[plot_box.rect.x+130,plot_box.rect.y+y+(30*buffer)+60])
             buffer = buffer + 1
         pg.display.update()

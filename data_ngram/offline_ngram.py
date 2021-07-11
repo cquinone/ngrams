@@ -2,7 +2,7 @@ import requests as req
 import glob
 import random as rand
 
-glob_files = glob.glob("/Users/quinones/work/prog/pyproj/games/correlation/data_ngram/*_data")
+glob_files = glob.glob("/Users/quinones/work/prog/pyproj/games/ngram/data_ngram/*_data")
 data_files = []
 for f in glob_files:
 	data_files.append(f[62:-5])
