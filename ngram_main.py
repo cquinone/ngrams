@@ -52,11 +52,12 @@ class Button:
         if pg.mouse.get_pressed()[0]:
             self.clicked = True
         if (event.type == pg.MOUSEBUTTONUP and self.type == "draw" and gamestart) or (self.type == "draw" and gamestart and outside):
-            self.clicked = False
-            # remove duplicate x axis points (make it a function!)
-            curr_player.points = interpolate_new(points, curr_player.points_count)
-            curr_player.points.sort(key=lambda x: x[0])
-            pg.draw.rect(screen, WHITE, pg.Rect(plot_box.rect.x+5 , plot_box.rect.y+5, plot_box.rect.w-7, plot_box.rect.h-7))
+            if ans_drawn_count == 0:
+                self.clicked = False
+                # remove duplicate x axis points (make it a function!)
+                curr_player.points = interpolate_new(points, curr_player.points_count)
+                curr_player.points.sort(key=lambda x: x[0])
+                pg.draw.rect(screen, WHITE, pg.Rect(self.rect.x+1 , self.rect.y, self.rect.w-1, self.rect.h-1))
 
         if self.clicked:
             if self.type == "text":
@@ -77,9 +78,9 @@ class Button:
                     self.push_count = self.push_count + 1
             
             if self.type == "draw":
-                if event.type != pg.MOUSEMOTION and gamestart:
+                if event.type != pg.MOUSEMOTION and gamestart and ans_drawn_count == 0:
                     curr_player.points_count = len(points)
-                if event.type == pg.MOUSEMOTION and gamestart:
+                if event.type == pg.MOUSEMOTION and gamestart and ans_drawn_count == 0:
                     points.append(event.pos)
 
         # cram in a clearing option for the plot box
@@ -88,10 +89,10 @@ class Button:
                 self.color = BLACK
             if event.type == pg.KEYDOWN and self.type == "draw":
                 if event.key == pg.K_c:
-                    curr_player.points.clear()
-                    self.cover()
-                    #screen.fill(WHITE)
-                    draw_dates()
+                    if ans_drawn_count == 0:   # so dont clear if question over and real ans displayed
+                        curr_player.points.clear()
+                        self.cover()
+                        draw_dates()
 
     # more text stuff? maybe cursor blinking!
     def cover(self):
@@ -465,7 +466,7 @@ intro = pg.image.load("ngram_intro.png").convert_alpha()
 howto = pg.image.load("ngram_howto.png").convert_alpha()
 
 # intro display
-intro_length = 70
+intro_length = 7000
 show_intro(intro, intro_length)
 # instructions display
 show_howto(howto)
@@ -517,9 +518,12 @@ while not quit:
                 draw_dates()
                 # upate score blit
                 draw_scores()
+
             next_box.push_count = 0
             ans_drawn_count = 0
-            #done_count = len(players)
+            # get rid of spurious lock-ins
+            done_box.push_count = 0
+            points = []
 
     # if the first turn, set up
     if overall_count == 0:
@@ -539,7 +543,8 @@ while not quit:
                 if box.type == "draw" and box.clicked == True:
                     box.handle(event, outside=True)
 
-    points = curr_player.points
+    if ans_drawn_count == 0 and done_count != len(players):
+        points = curr_player.points
     
     # if a player has clicked "LOCK - IN"
     # skip if on actual data draw, or if no points have been drawn, or etc
