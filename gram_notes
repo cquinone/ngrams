@@ -1,0 +1,58 @@
+add:
+	print round scores along with winning curve, as once they add up, cant tell
+	background music?
+	^ or, noise on score start...
+	ordering or lowest score on score draw
+	output score.txt at end?
+	crosshair on cursor location
+
+	DEFINITELY: 
+
+    animation on round winner score, comparing to data
+	^ add comparison? maybe red above, blue below....
+    round count --> so like: ROUND: X/N
+    highlight final winning score (lowest)
+
+
+maybe add:
+	buttons to enter player names
+	animation / cutscreen for each question: display question in big letters, then ask for plotting
+
+
+python3 freeze.py py2app --packages=wx
+Correlation_test.app/Contents/MacOS/Correlation_test "c"
+
+
+
+HOW:
+	crosshair - in general drawing calls... No!
+				if click, hold, over draw box, draw crosshair there
+
+	gray grid - in general drawing calls, do this first, pygame lines should be enough
+
+
+
+
+
+
+OLD CODE:
+
+    if kind == "trend": 
+        a = datetime(int(date1[:4]), int(date1[5:7]), int(date1[8:]))
+        b = datetime(int(date2[:4]), int(date2[5:7]), int(date2[8:]))
+        return str(a + (b - a)/2)[:10]
+
+
+        dt = clock.tick()
+        colorchange = colorchange + dt
+        print(colorchange, colorchange%800)
+        if colorchange % maxchange == 0 and colorchange % maxchange < maxchange/2:
+            pg.draw.rect(screen, next_box.color, next_box.rect)
+            readysurf = reallybigfont.render("I'M READY", True, BLUE)
+            screen.blit(readysurf, (next_box.rect.x+115,next_box.rect.y+22))
+            pg.display.update(next_box.rect)
+        if colorchange % maxchange >= maxchange/2:
+            pg.draw.rect(screen, next_box.color, next_box.rect)
+            readysurf = reallybigfont.render("I'M READY", True, ORANGE)
+            screen.blit(readysurf, (next_box.rect.x+115,next_box.rect.y+22))
+            pg.display.update(next_box.rect)

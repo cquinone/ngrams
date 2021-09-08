@@ -11,10 +11,10 @@ for f in glob_files:
 file = open('ngram_list', 'r')
 words = []
 for line in file.readlines():
-    if line[-1] == '\n':
-        words.append(line[:-1])
-    else:
-    	words.append(line)
+	if line[-1] == '\n':
+	    words.append(line[:-1])
+	else:
+		words.append(line)
 file.close()
 
 for trend_word in words:
